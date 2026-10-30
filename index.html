@@ -3,18 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Signals & Systems - 3D Fourier Visualizer</title>
+    <title>3D Fourier Domain Visualizer - Signals & Systems</title>
     
-    <!-- Three.js Library for 3D Plotting -->
+    <!-- Three.js Library & OrbitControls -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
-            font-family: Arial, Helvetica, sans-serif;
-            background-color: #12161f;
-            color: #eaeaea;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #0d1117;
+            color: #e6edf3;
             display: flex;
             height: 100vh;
             overflow: hidden;
@@ -22,82 +26,114 @@
 
         /* Left Control Sidebar */
         .sidebar {
-            width: 330px;
-            background-color: #1c2230;
-            padding: 16px 18px;
-            border-right: 1px solid #323b4f;
+            width: 345px;
+            background-color: #161b22;
+            padding: 15px 16px;
+            border-right: 1px solid #30363d;
             overflow-y: auto;
-            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
         h2 {
-            margin-top: 0;
-            margin-bottom: 4px;
-            font-size: 18px;
-            color: #4da6ff;
-            border-bottom: 1px solid #323b4f;
-            padding-bottom: 8px;
+            margin: 0;
+            font-size: 17.5px;
+            color: #58a6ff;
+            border-bottom: 1px solid #30363d;
+            padding-bottom: 7px;
         }
 
         .subtitle {
-            font-size: 12px;
-            color: #aab2c0;
-            margin-bottom: 14px;
+            font-size: 11.5px;
+            color: #8b949e;
+            margin-top: -4px;
+            margin-bottom: 4px;
         }
 
         .control-group {
-            margin-bottom: 11px;
-            background: #232b3d;
-            padding: 9px 12px;
+            background: #21262d;
+            padding: 9px 11px;
             border-radius: 6px;
+            border: 1px solid #30363d;
+        }
+
+        .section-title {
+            font-size: 11.5px;
+            font-weight: bold;
+            color: #58a6ff;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-bottom: 6px;
+            display: block;
         }
 
         label {
             display: flex;
             justify-content: space-between;
-            font-size: 12.5px;
-            margin-bottom: 4px;
-            font-weight: bold;
+            font-size: 12px;
+            margin-bottom: 3px;
+            font-weight: 600;
+        }
+
+        .val-badge {
+            color: #79c0ff;
+            font-family: Consolas, monospace;
         }
 
         input[type="range"] {
             width: 100%;
             cursor: pointer;
+            accent-color: #3b82f6;
             margin: 2px 0;
         }
 
         select {
             width: 100%;
-            padding: 6px;
-            background: #12161f;
-            color: white;
-            border: 1px solid #4a5568;
+            padding: 6px 8px;
+            background: #0d1117;
+            color: #e6edf3;
+            border: 1px solid #30363d;
             border-radius: 4px;
-            margin-top: 4px;
-            font-size: 12.5px;
+            margin-top: 3px;
+            font-size: 12px;
             cursor: pointer;
         }
 
         .btn-row {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
             gap: 5px;
-            margin-bottom: 12px;
+        }
+
+        .anim-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            margin-top: 5px;
         }
 
         button {
-            flex: 1;
-            padding: 7px 4px;
-            background-color: #2b3548;
-            color: white;
-            border: 1px solid #4a5568;
+            padding: 6px 5px;
+            background-color: #21262d;
+            color: #e6edf3;
+            border: 1px solid #30363d;
             border-radius: 4px;
             cursor: pointer;
             font-size: 11.5px;
+            font-weight: 600;
+            transition: background 0.15s, border-color 0.15s;
         }
 
         button:hover {
-            background-color: #3b82f6;
-            border-color: #3b82f6;
+            background-color: #1f6feb;
+            border-color: #388bfd;
+        }
+
+        button.active-btn {
+            background-color: #1f6feb;
+            border-color: #58a6ff;
+            color: #ffffff;
         }
 
         .checkbox-group {
@@ -108,24 +144,27 @@
         .checkbox-group input {
             cursor: pointer;
             margin-right: 6px;
+            accent-color: #3b82f6;
         }
 
         .results-box {
-            background-color: #151a24;
-            padding: 10px 12px;
-            border-left: 3px solid #4da6ff;
+            background-color: #0d1117;
+            padding: 9px 11px;
+            border-left: 3px solid #58a6ff;
             border-radius: 4px;
-            font-size: 12px;
+            font-size: 11.8px;
             line-height: 1.65;
-            margin-top: 10px;
         }
 
         .formula-text {
             color: #ffd166;
             font-family: Consolas, monospace;
-            font-size: 11.5px;
+            font-size: 11px;
             display: block;
-            margin-top: 4px;
+            margin-top: 5px;
+            padding: 4px 6px;
+            background: #161b22;
+            border-radius: 4px;
         }
 
         /* Right 3D Canvas Area */
@@ -138,12 +177,12 @@
             position: absolute;
             top: 12px;
             left: 12px;
-            background: rgba(28, 34, 48, 0.9);
+            background: rgba(22, 27, 34, 0.92);
             padding: 10px 14px;
-            border: 1px solid #323b4f;
+            border: 1px solid #30363d;
             border-radius: 6px;
-            font-size: 12px;
-            line-height: 1.7;
+            font-size: 11.8px;
+            line-height: 1.68;
             pointer-events: none;
         }
 
@@ -154,16 +193,47 @@
             border-radius: 50%;
             margin-right: 6px;
         }
+
+        /* Bottom-Right 2D Mini Scope Overlay */
+        .scope-panel {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            width: 390px;
+            background: rgba(22, 27, 34, 0.94);
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 8px 10px;
+        }
+
+        .scope-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11.5px;
+            font-weight: bold;
+            color: #8b949e;
+            margin-bottom: 5px;
+        }
+
+        #scopeCanvas {
+            width: 100%;
+            height: 150px;
+            background: #0d1117;
+            border: 1px solid #21262d;
+            border-radius: 4px;
+            display: block;
+        }
     </style>
 </head>
 <body>
 
-    <!-- Left Sidebar for Controls -->
+    <!-- Left Control Sidebar -->
     <div class="sidebar">
         <h2>3D Fourier Domain Visualizer</h2>
         <div class="subtitle">Continuous-Time Periodic (CTFS) vs. Non-Periodic (CTFT)</div>
 
-        <!-- Camera View Buttons -->
+        <!-- Camera Presets -->
         <div class="btn-row">
             <button onclick="changeCamera('3d')">3D View</button>
             <button onclick="changeCamera('time')">Time Wall</button>
@@ -171,238 +241,339 @@
             <button onclick="changeCamera('top')">Top View</button>
         </div>
 
-        <!-- Waveform Selector (5 Different Waveforms) -->
+        <!-- 3D Visualization Mode Selector -->
         <div class="control-group">
-            <label>Select Waveform Shape:</label>
+            <span class="section-title">3D Analysis Mode</span>
+            <select id="viewMode" onchange="updatePlot()">
+                <option value="standard">Mode 1: 3D Time-Frequency Decomposition</option>
+                <option value="waterfall">Mode 2: 3D Period Waterfall (T0 → ∞)</option>
+                <option value="phasor">Mode 3: 3D Complex Phase Helix (Time Shift)</option>
+            </select>
+        </div>
+
+        <!-- Waveform Selector (7 Waveforms) -->
+        <div class="control-group">
+            <span class="section-title">Waveform Selection</span>
             <select id="pulseShape" onchange="updatePlot()">
-                <option value="rect">1. Rectangular Pulse (Sinc)</option>
-                <option value="tri">2. Triangular Pulse (Sinc²)</option>
+                <option value="rect">1. Rectangular Pulse (Sinc Spectrum)</option>
+                <option value="tri">2. Triangular Pulse (Sinc² Spectrum)</option>
                 <option value="gauss">3. Gaussian Pulse (Bell Curve)</option>
                 <option value="cosine">4. Modulated Cosine Burst (RF)</option>
                 <option value="exp">5. Double-Sided Exponential</option>
+                <option value="sinc_pulse">6. Sinc Pulse (Ideal Bandlimited Box)</option>
+                <option value="damped">7. Damped Cosine Wave</option>
             </select>
             <span id="formula_display" class="formula-text">X(jω) = A·τ·sinc(ωτ / 2π)</span>
         </div>
 
-        <!-- Slider 1: Amplitude A -->
+        <!-- Signal Sliders -->
         <div class="control-group">
-            <label>
-                <span>Signal Amplitude (A):</span>
-                <span id="A_val">1.0</span>
-            </label>
+            <label><span>Signal Amplitude (A):</span><span id="A_val" class="val-badge">1.0</span></label>
             <input type="range" id="A_slider" min="0.5" max="2.0" step="0.1" value="1.0" oninput="updatePlot()">
-        </div>
 
-        <!-- Slider 2: Period T0 -->
-        <div class="control-group">
-            <label>
-                <span>Repetition Period (T0):</span>
-                <span id="T0_val">4.0 s</span>
-            </label>
-            <input type="range" id="T0_slider" min="2.0" max="12.0" step="0.5" value="4.0" oninput="updatePlot()">
-        </div>
+            <label style="margin-top:6px;"><span>Repetition Period (T0):</span><span id="T0_val" class="val-badge">4.0 s</span></label>
+            <input type="range" id="T0_slider" min="2.0" max="12.0" step="0.2" value="4.0" oninput="updatePlot()">
 
-        <!-- Slider 3: Pulse Width tau -->
-        <div class="control-group">
-            <label>
-                <span>Pulse Duration (τ):</span>
-                <span id="tau_val">1.0 s</span>
-            </label>
+            <label style="margin-top:6px;"><span>Pulse Duration (τ):</span><span id="tau_val" class="val-badge">1.0 s</span></label>
             <input type="range" id="tau_slider" min="0.3" max="2.5" step="0.1" value="1.0" oninput="updatePlot()">
-        </div>
 
-        <!-- Slider 4: Number of Harmonics N -->
-        <div class="control-group">
-            <label>
-                <span>Fourier Harmonics (N):</span>
-                <span id="N_val">11</span>
-            </label>
+            <label style="margin-top:6px;"><span>Fourier Harmonics (N):</span><span id="N_val" class="val-badge">11</span></label>
             <input type="range" id="N_slider" min="1" max="30" step="1" value="11" oninput="updatePlot()">
+
+            <label style="margin-top:6px;"><span>Time Shift (t0):</span><span id="t0_val" class="val-badge">0.0 s</span></label>
+            <input type="range" id="t0_slider" min="-1.5" max="1.5" step="0.05" value="0.0" oninput="updatePlot()">
+
+            <div id="carrier_group" style="display: none; margin-top:6px;">
+                <label><span>Carrier Frequency (ωc):</span><span id="wc_val" class="val-badge">8.0 rad/s</span></label>
+                <input type="range" id="wc_slider" min="4.0" max="14.0" step="0.5" value="8.0" oninput="updatePlot()">
+            </div>
         </div>
 
-        <!-- Slider 5: Time Shift t0 -->
+        <!-- Live Animations for Presentation -->
         <div class="control-group">
-            <label>
-                <span>Time Shift (t0):</span>
-                <span id="t0_val">0.0 s</span>
-            </label>
-            <input type="range" id="t0_slider" min="-1.5" max="1.5" step="0.1" value="0.0" oninput="updatePlot()">
+            <span class="section-title">Live Classroom Demos</span>
+            <div class="anim-row">
+                <button id="btn_anim_T0" onclick="toggleAnimation('T0')">Sweep T0→∞</button>
+                <button id="btn_anim_N" onclick="toggleAnimation('N')">Build N=1→25</button>
+                <button id="btn_anim_t0" onclick="toggleAnimation('t0')">Sweep Shift t0</button>
+            </div>
         </div>
 
-        <!-- Slider 6: Carrier Frequency wc (Shown for Cosine Burst) -->
-        <div class="control-group" id="carrier_group" style="display: none;">
-            <label>
-                <span>Carrier Frequency (ωc):</span>
-                <span id="wc_val">8.0 rad/s</span>
-            </label>
-            <input type="range" id="wc_slider" min="4.0" max="14.0" step="0.5" value="8.0" oninput="updatePlot()">
-        </div>
-
-        <!-- Checkboxes to toggle Continuous & Discrete signals -->
+        <!-- Layer Visibility Checkboxes -->
         <div class="control-group checkbox-group">
-            <label style="margin-bottom:6px; color:#4da6ff;">Display Layers:</label>
+            <span class="section-title">3D Layers & Styling</span>
             <input type="checkbox" id="showContPulse" checked onchange="updatePlot()"> Continuous Non-Periodic Signal x(t)<br>
             <input type="checkbox" id="showIdealPeriodic" checked onchange="updatePlot()"> Ideal Continuous Periodic Signal x̃(t)<br>
             <input type="checkbox" id="showFourierSum" checked onchange="updatePlot()"> Fourier Series Synthesis x̂_N(t)<br>
-            <input type="checkbox" id="showSineWaves" checked onchange="updatePlot()"> 3D Harmonic Sine Waves<br>
+            <input type="checkbox" id="showSineWaves" checked onchange="updatePlot()"> 3D Harmonic Waves & Ribbons<br>
             <input type="checkbox" id="showContSpectrum" checked onchange="updatePlot()"> Continuous CTFT Spectrum |X(jω)|<br>
-            <input type="checkbox" id="showDiscreteStems" checked onchange="updatePlot()"> Discrete CTFS Stems (T0·|ck|)<br>
-            <input type="checkbox" id="showSigned" onchange="updatePlot()"> Plot Signed Spectrum (Real Amplitude)
+            <input type="checkbox" id="showDiscreteStems" checked onchange="updatePlot()"> 3D Cylindrical CTFS Stems (T0·|ck|)<br>
+            <input type="checkbox" id="showSigned" onchange="updatePlot()"> Plot Signed Spectrum (Real Amplitude)<br>
+            <input type="checkbox" id="show2DScope" checked onchange="toggleScope()"> Show 2D Reference Scope
         </div>
 
-        <!-- Calculated Parameters Output -->
+        <!-- Live Numerical Readout -->
         <div class="results-box">
-            <strong>Calculated Parameters:</strong><br>
-            Fundamental Freq (ω0): <span id="out_w0">1.57 rad/s</span><br>
-            Main Lobe Bandwidth: <span id="out_bw">12.57 rad/s</span><br>
-            Duty Ratio (τ / T0): <span id="out_duty">25.0 %</span><br>
-            Single Pulse Energy (E): <span id="out_energy">1.00 J</span><br>
-            Periodic Signal Power (P): <span id="out_power">0.25 W</span>
+            <strong>Live Signal Metrics:</strong><br>
+            Fundamental Freq (ω0): <span id="out_w0" class="val-badge">1.57 rad/s</span><br>
+            Main Lobe Bandwidth: <span id="out_bw" class="val-badge">12.57 rad/s</span><br>
+            Duty Cycle (τ / T0): <span id="out_duty" class="val-badge">25.0 %</span><br>
+            Non-Periodic Energy (E): <span id="out_energy" class="val-badge">1.00 J</span><br>
+            Periodic Avg Power (P): <span id="out_power" class="val-badge">0.250 W</span>
         </div>
     </div>
 
-    <!-- Right 3D Plot Viewport -->
+    <!-- Right 3D Viewport -->
     <div id="viewer-container">
         <div class="legend-box">
-            <strong>Time Domain (Front Wall):</strong><br>
-            <div><span class="dot" style="background:#ff3366;"></span>Continuous Non-Periodic Signal x(t)</div>
-            <div><span class="dot" style="background:#00e5ff;"></span>Ideal Continuous Periodic Signal x̃(t)</div>
-            <div><span class="dot" style="background:#ff9900;"></span>Fourier Series Approximation x̂_N(t)</div>
-            <strong style="display:block; margin-top:4px;">Frequency Domain (Side Wall & 3D):</strong>
-            <div><span class="dot" style="background:#22c55e;"></span>3D Harmonic Components (k·ω0)</div>
-            <div><span class="dot" style="background:#38bdf8;"></span>Discrete CTFS Stems (T0·|ck|)</div>
-            <div><span class="dot" style="background:#ff3366;"></span>Continuous CTFT Spectrum |X(jω)|</div>
+            <strong>Time Domain (Front Plane):</strong><br>
+            <div><span class="dot" style="background:#ff3366;"></span>Continuous Non-Periodic Pulse x(t)</div>
+            <div><span class="dot" style="background:#00e5ff;"></span>Ideal Periodic Signal Train x̃(t)</div>
+            <div><span class="dot" style="background:#ffa600;"></span>Fourier Series Synthesis x̂_N(t)</div>
+            <strong style="display:block; margin-top:4px;">Frequency Domain (Side Wall & 3D Space):</strong>
+            <div><span class="dot" style="background:#22c55e;"></span>3D Harmonic Waves & Shaded Ribbons</div>
+            <div><span class="dot" style="background:#38bdf8;"></span>3D Cylindrical CTFS Stems (T0·|ck|)</div>
+            <div><span class="dot" style="background:#ff3366;"></span>Continuous CTFT Envelope |X(jω)|</div>
+        </div>
+
+        <!-- Synchronized 2D Reference Scope -->
+        <div class="scope-panel" id="scopePanel">
+            <div class="scope-header">
+                <span>2D Synchronized Time & Frequency Reference</span>
+                <button onclick="saveScreenshot()" style="padding:2px 7px; font-size:10.5px;">Save PNG</button>
+            </div>
+            <canvas id="scopeCanvas" width="370" height="150"></canvas>
         </div>
     </div>
 
     <script>
-        // --- 1. Basic Three.js Scene Setup ---
+        // ============================================================================
+        // 1. THREE.JS SCENE, LIGHTING & CAMERA SETUP
+        // ============================================================================
         const container = document.getElementById('viewer-container');
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x12161f);
+        scene.background = new THREE.Color(0x0d1117);
 
-        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 200);
-        camera.position.set(19, 13, 23);
+        const camera = new THREE.PerspectiveCamera(44, container.clientWidth / container.clientHeight, 0.1, 250);
+        camera.position.set(20, 13.5, 23);
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
         renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         container.appendChild(renderer.domElement);
 
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.target.set(0, 1.8, 0);
+        controls.target.set(0, 2.0, 0);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.07;
         controls.update();
 
-        // Add Grid Floor
-        const grid = new THREE.GridHelper(22, 22, 0x3b4252, 0x222834);
+        // Add 3D Lighting so Tube & Cylinder Waveforms look solid and 3D
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
+        scene.add(ambientLight);
+
+        const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.85);
+        dirLight1.position.set(20, 30, 25);
+        scene.add(dirLight1);
+
+        const dirLight2 = new THREE.DirectionalLight(0x58a6ff, 0.35);
+        dirLight2.position.set(-20, 15, -15);
+        scene.add(dirLight2);
+
+        // Floor Grid
+        const grid = new THREE.GridHelper(22, 22, 0x30363d, 0x1c2128);
         scene.add(grid);
 
-        // Group to hold all dynamic signal lines and meshes
+        // Group for all dynamic 3D objects
         const plotGroup = new THREE.Group();
         scene.add(plotGroup);
 
-        // --- 2. Waveform & Fourier Math Functions ---
-        // Normalized sinc(x) = sin(pi * x) / (pi * x)
+        // ============================================================================
+        // 2. HELPER FUNCTIONS TO BUILD VOLUMETRIC 3D TUBES, RIBBONS & LABELS
+        // ============================================================================
+
+        // Create a smooth 3D solid tube along an array of THREE.Vector3 points
+        function create3DTube(points, radius, colorHex, opacity = 1.0) {
+            if (points.length < 2) return null;
+            const curve = new THREE.CatmullRomCurve3(points);
+            const segments = Math.min(points.length * 2, 400);
+            const geometry = new THREE.TubeGeometry(curve, segments, radius, 8, false);
+            const material = new THREE.MeshStandardMaterial({
+                color: colorHex,
+                roughness: 0.32,
+                metalness: 0.15,
+                transparent: opacity < 1.0,
+                opacity: opacity
+            });
+            return new THREE.Mesh(geometry, material);
+        }
+
+        // Create a shaded vertical curtain ribbon between a 3D curve and y = 0
+        function create3DRibbon(points, colorHex, opacity = 0.20) {
+            const vertices = [];
+            for (let i = 0; i < points.length - 1; i++) {
+                const p1 = points[i];
+                const p2 = points[i + 1];
+                vertices.push(
+                    p1.x, 0, p1.z,
+                    p1.x, p1.y, p1.z,
+                    p2.x, p2.y, p2.z,
+                    p1.x, 0, p1.z,
+                    p2.x, p2.y, p2.z,
+                    p2.x, 0, p2.z
+                );
+            }
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            const mat = new THREE.MeshBasicMaterial({
+                color: colorHex,
+                transparent: true,
+                opacity: opacity,
+                side: THREE.DoubleSide,
+                depthWrite: false
+            });
+            return new THREE.Mesh(geo, mat);
+        }
+
+        // Create a 3D Cylindrical Pillar with a spherical cap for discrete harmonics
+        function create3DPillar(x, z, height, radius, colorHex) {
+            const group = new THREE.Group();
+            const absH = Math.abs(height);
+            if (absH > 0.01) {
+                const cylGeo = new THREE.CylinderGeometry(radius, radius, absH, 12);
+                const cylMat = new THREE.MeshStandardMaterial({
+                    color: colorHex,
+                    roughness: 0.3,
+                    metalness: 0.2
+                });
+                const cyl = new THREE.Mesh(cylGeo, cylMat);
+                cyl.position.set(x, height / 2.0, z);
+                group.add(cyl);
+            }
+            const sphGeo = new THREE.SphereGeometry(radius * 1.65, 12, 12);
+            const sphMat = new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                emissive: colorHex,
+                emissiveIntensity: 0.45,
+                roughness: 0.2
+            });
+            const sph = new THREE.Mesh(sphGeo, sphMat);
+            sph.position.set(x, height, z);
+            group.add(sph);
+            return group;
+        }
+
+        // Create crisp 3D Canvas Text Sprites for axis labels
+        function createTextLabel(text, x, y, z, colorStr = "#8b949e", scaleSize = 1.6) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            ctx.font = "bold 26px Consolas, Arial";
+            ctx.fillStyle = colorStr;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(text, 128, 32);
+
+            const tex = new THREE.CanvasTexture(canvas);
+            const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+            const sprite = new THREE.Sprite(mat);
+            sprite.position.set(x, y, z);
+            sprite.scale.set(scaleSize * 2.2, scaleSize * 0.55, 1);
+            return sprite;
+        }
+
+        // ============================================================================
+        // 3. SIGNALS & SYSTEMS MATHEMATICAL FUNCTIONS
+        // ============================================================================
         function sinc(x) {
             if (Math.abs(x) < 1e-6) return 1.0;
             return Math.sin(Math.PI * x) / (Math.PI * x);
         }
 
-        // Evaluate single isolated continuous-time pulse x(t) centered at t = 0
         function evaluateSinglePulse(t, A, tau, shape, wc) {
             const half = tau / 2.0;
-
             if (shape === 'rect') {
                 return (Math.abs(t) <= half) ? A : 0.0;
-            } 
-            else if (shape === 'tri') {
+            } else if (shape === 'tri') {
                 return (Math.abs(t) <= half) ? A * (1.0 - Math.abs(t) / half) : 0.0;
-            } 
-            else if (shape === 'gauss') {
+            } else if (shape === 'gauss') {
                 const sigma = tau * 0.35;
                 return A * Math.exp(-(t * t) / (2 * sigma * sigma));
-            } 
-            else if (shape === 'cosine') {
+            } else if (shape === 'cosine') {
                 return (Math.abs(t) <= half) ? A * Math.cos(wc * t) : 0.0;
-            } 
-            else if (shape === 'exp') {
+            } else if (shape === 'exp') {
                 const alpha = 2.5 / tau;
-                return (Math.abs(t) <= tau * 1.2) ? A * Math.exp(-alpha * Math.abs(t)) : 0.0;
+                return (Math.abs(t) <= tau * 1.4) ? A * Math.exp(-alpha * Math.abs(t)) : 0.0;
+            } else if (shape === 'sinc_pulse') {
+                return A * sinc((2.0 * t) / tau);
+            } else if (shape === 'damped') {
+                const alpha = 1.8 / tau;
+                return (Math.abs(t) <= tau * 1.3) ? A * Math.exp(-alpha * Math.abs(t)) * Math.cos(wc * t) : 0.0;
             }
             return 0.0;
         }
 
-        // Evaluate Continuous-Time Fourier Transform X(jw)
         function calculateCTFT(w, A, tau, shape, wc) {
             if (shape === 'rect') {
                 return A * tau * sinc((w * tau) / (2 * Math.PI));
-            } 
-            else if (shape === 'tri') {
+            } else if (shape === 'tri') {
                 const s = sinc((w * tau) / (4 * Math.PI));
                 return 0.5 * A * tau * s * s;
-            } 
-            else if (shape === 'gauss') {
+            } else if (shape === 'gauss') {
                 const sigma = tau * 0.35;
                 return A * Math.sqrt(2 * Math.PI) * sigma * Math.exp(-0.5 * sigma * sigma * w * w);
-            } 
-            else if (shape === 'cosine') {
+            } else if (shape === 'cosine') {
                 const s1 = sinc(((w - wc) * tau) / (2 * Math.PI));
                 const s2 = sinc(((w + wc) * tau) / (2 * Math.PI));
                 return 0.5 * A * tau * (s1 + s2);
-            } 
-            else if (shape === 'exp') {
+            } else if (shape === 'exp') {
                 const alpha = 2.5 / tau;
                 return A * (2 * alpha) / (alpha * alpha + w * w);
+            } else if (shape === 'sinc_pulse') {
+                const W_cut = (2.0 * Math.PI) / tau;
+                return (Math.abs(w) <= W_cut) ? (0.5 * A * tau) : 0.0;
+            } else if (shape === 'damped') {
+                const alpha = 1.8 / tau;
+                const L1 = alpha / (alpha * alpha + (w - wc) * (w - wc));
+                const L2 = alpha / (alpha * alpha + (w + wc) * (w + wc));
+                return A * (L1 + L2);
             }
             return 0.0;
         }
 
-        // Helper for waveform info & formulas
         function getWaveformDetails(A, tau, shape) {
             if (shape === 'rect') {
-                return {
-                    formula: "X(jω) = A·τ·sinc(ωτ / 2π)",
-                    bw: (4 * Math.PI) / tau,
-                    energy: A * A * tau
-                };
+                return { formula: "X(jω) = A·τ·sinc(ωτ / 2π)", bw: (4 * Math.PI) / tau, energy: A * A * tau };
             } else if (shape === 'tri') {
-                return {
-                    formula: "X(jω) = (Aτ/2)·sinc²(ωτ / 4π)",
-                    bw: (8 * Math.PI) / tau,
-                    energy: (A * A * tau) / 3.0
-                };
+                return { formula: "X(jω) = (Aτ/2)·sinc²(ωτ / 4π)", bw: (8 * Math.PI) / tau, energy: (A * A * tau) / 3.0 };
             } else if (shape === 'gauss') {
                 const sigma = tau * 0.35;
-                return {
-                    formula: "X(jω) = A√(2π)σ·exp(-σ²ω²/2)",
-                    bw: 4.0 / sigma,
-                    energy: A * A * sigma * Math.sqrt(Math.PI)
-                };
+                return { formula: "X(jω) = A√(2π)σ·exp(-σ²ω²/2)", bw: 4.0 / sigma, energy: A * A * sigma * Math.sqrt(Math.PI) };
             } else if (shape === 'cosine') {
-                return {
-                    formula: "X(jω) = (Aτ/2)[sinc(ω-ωc) + sinc(ω+ωc)]",
-                    bw: (4 * Math.PI) / tau,
-                    energy: 0.5 * A * A * tau
-                };
-            } else {
+                return { formula: "X(jω) = (Aτ/2)[sinc(ω-ωc) + sinc(ω+ωc)]", bw: (4 * Math.PI) / tau, energy: 0.5 * A * A * tau };
+            } else if (shape === 'exp') {
                 const alpha = 2.5 / tau;
-                return {
-                    formula: "X(jω) = 2Aα / (α² + ω²)",
-                    bw: 2.0 * alpha,
-                    energy: (A * A) / alpha
-                };
+                return { formula: "X(jω) = 2Aα / (α² + ω²)", bw: 2.0 * alpha, energy: (A * A) / alpha };
+            } else if (shape === 'sinc_pulse') {
+                return { formula: "X(jω) = (Aτ/2)·rect(ωτ / 4π)", bw: (4 * Math.PI) / tau, energy: 0.5 * A * A * tau };
+            } else {
+                const alpha = 1.8 / tau;
+                return { formula: "X(jω) = Aα/[α²+(ω-ωc)²] + Aα/[α²+(ω+ωc)²]", bw: 4.0 * alpha, energy: (0.5 * A * A) / alpha };
             }
         }
 
-        // --- 3. Main Function to Draw 3D Signals ---
+        // ============================================================================
+        // 4. MAIN 3D SCENE BUILDER (SUPPORTS ALL 3 MODES)
+        // ============================================================================
         function updatePlot() {
-            // Clear existing 3D objects
+            // Clear previous meshes
             while (plotGroup.children.length > 0) {
                 const obj = plotGroup.children[0];
                 plotGroup.remove(obj);
-                if (obj.geometry) obj.geometry.dispose();
             }
 
-            // Read values from controls
+            const mode = document.getElementById('viewMode').value;
             const shape = document.getElementById('pulseShape').value;
             const A = parseFloat(document.getElementById('A_slider').value);
             const T0 = parseFloat(document.getElementById('T0_slider').value);
@@ -411,16 +582,14 @@
             const t0 = parseFloat(document.getElementById('t0_slider').value);
             const wc = parseFloat(document.getElementById('wc_slider').value);
 
-            // Show carrier slider only when Modulated Cosine Burst is chosen
-            document.getElementById('carrier_group').style.display = (shape === 'cosine') ? 'block' : 'none';
+            document.getElementById('carrier_group').style.display =
+                (shape === 'cosine' || shape === 'damped') ? 'block' : 'none';
 
-            // Keep pulse duration tau smaller than period T0
             if (tau >= T0 - 0.2) {
                 tau = +(T0 - 0.2).toFixed(1);
                 document.getElementById('tau_slider').value = tau;
             }
 
-            // Read checkbox states
             const showContPulse = document.getElementById('showContPulse').checked;
             const showIdealPeriodic = document.getElementById('showIdealPeriodic').checked;
             const showFourierSum = document.getElementById('showFourierSum').checked;
@@ -432,13 +601,13 @@
             const w0 = (2 * Math.PI) / T0;
             const info = getWaveformDetails(A, tau, shape);
 
-            // Update UI labels
+            // Update Sidebar Badges
             document.getElementById('formula_display').innerText = info.formula;
             document.getElementById('A_val').innerText = A.toFixed(1);
             document.getElementById('T0_val').innerText = T0.toFixed(1) + " s";
             document.getElementById('tau_val').innerText = tau.toFixed(1) + " s";
             document.getElementById('N_val').innerText = N;
-            document.getElementById('t0_val').innerText = t0.toFixed(1) + " s";
+            document.getElementById('t0_val').innerText = t0.toFixed(2) + " s";
             document.getElementById('wc_val').innerText = wc.toFixed(1) + " rad/s";
 
             document.getElementById('out_w0').innerText = w0.toFixed(2) + " rad/s";
@@ -447,207 +616,370 @@
             document.getElementById('out_energy').innerText = info.energy.toFixed(2) + " J";
             document.getElementById('out_power').innerText = (info.energy / T0).toFixed(3) + " W";
 
-            // 3D Coordinate Scaling (-11 to +11)
             const timeLimit = 5.5;
             const freqLimit = 22.0;
             const scaleX = 11.0 / timeLimit;
             const scaleZ = 11.0 / freqLimit;
             const scaleY = 3.2;
 
-            const zTimeWall = 11.0;     // Front wall for Time Domain
-            const xFreqWall = -11.0;    // Side wall for Frequency Domain
-
-            // Draw reference axes on Time and Frequency walls
-            const axisMat = new THREE.LineBasicMaterial({ color: 0x64748b });
-            plotGroup.add(new THREE.Line(
-                new THREE.BufferGeometry().setFromPoints([
-                    new THREE.Vector3(-11, 0, zTimeWall),
-                    new THREE.Vector3(11, 0, zTimeWall)
-                ]), axisMat
-            ));
-            plotGroup.add(new THREE.Line(
-                new THREE.BufferGeometry().setFromPoints([
-                    new THREE.Vector3(xFreqWall, 0, -11),
-                    new THREE.Vector3(xFreqWall, 0, 11)
-                ]), axisMat
-            ));
-
-            const numTimeSamples = 500;
-
-            // --- A1. Draw Ideal Continuous Periodic Signal x_tilde(t) on Front Wall ---
-            if (showIdealPeriodic) {
-                const idealPerPoints = [];
-                for (let i = 0; i <= numTimeSamples; i++) {
-                    const t = -timeLimit + (2 * timeLimit * i) / numTimeSamples;
-                    let val = 0.0;
-                    for (let m = -3; m <= 3; m++) {
-                        val += evaluateSinglePulse(t - t0 - m * T0, A, tau, shape, wc);
-                    }
-                    idealPerPoints.push(new THREE.Vector3(t * scaleX, val * scaleY, zTimeWall - 0.08));
-                }
-                plotGroup.add(new THREE.Line(
-                    new THREE.BufferGeometry().setFromPoints(idealPerPoints),
-                    new THREE.LineBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.75 })
-                ));
-            }
-
-            // --- A2. Draw Continuous Non-Periodic Isolated Signal x(t) on Front Wall ---
-            if (showContPulse) {
-                const contPulsePoints = [];
-                for (let i = 0; i <= numTimeSamples; i++) {
-                    const t = -timeLimit + (2 * timeLimit * i) / numTimeSamples;
-                    const val = evaluateSinglePulse(t - t0, A, tau, shape, wc);
-                    contPulsePoints.push(new THREE.Vector3(t * scaleX, val * scaleY, zTimeWall + 0.08));
-                }
-                plotGroup.add(new THREE.Line(
-                    new THREE.BufferGeometry().setFromPoints(contPulsePoints),
-                    new THREE.LineBasicMaterial({ color: 0xff3366, linewidth: 2 })
-                ));
-            }
-
-            // --- A3. Draw Fourier Series Synthesis x_hat_N(t) on Front Wall ---
-            if (showFourierSum) {
-                const synthPoints = [];
-                const c0 = calculateCTFT(0, A, tau, shape, wc) / T0;
-
-                for (let i = 0; i <= numTimeSamples; i++) {
-                    const t = -timeLimit + (2 * timeLimit * i) / numTimeSamples;
-                    let sum = c0;
-                    for (let k = 1; k <= N; k++) {
-                        const wk = k * w0;
-                        const ck = calculateCTFT(wk, A, tau, shape, wc) / T0;
-                        sum += 2 * ck * Math.cos(wk * (t - t0));
-                    }
-                    synthPoints.push(new THREE.Vector3(t * scaleX, sum * scaleY, zTimeWall + 0.16));
-                }
-                plotGroup.add(new THREE.Line(
-                    new THREE.BufferGeometry().setFromPoints(synthPoints),
-                    new THREE.LineBasicMaterial({ color: 0xff9900 })
-                ));
-            }
-
-            // --- B. Draw 3D Individual Harmonic Sine Waves in the Interior ---
-            if (showSineWaves) {
-                const maxK = Math.min(N, Math.floor(freqLimit / w0));
-                for (let k = -maxK; k <= maxK; k++) {
-                    const wk = k * w0;
-                    const zPos = wk * scaleZ;
-                    const ck = calculateCTFT(wk, A, tau, shape, wc) / T0;
-                    const wavePoints = [];
-
-                    for (let i = 0; i <= 150; i++) {
-                        const t = -timeLimit + (2 * timeLimit * i) / 150;
-                        const yVal = (k === 0) ? ck : ck * Math.cos(wk * (t - t0));
-                        wavePoints.push(new THREE.Vector3(t * scaleX, yVal * scaleY * 1.4, zPos));
-                    }
-
-                    const waveColor = (k === 0) ? 0xff9900 : 0x22c55e;
-                    plotGroup.add(new THREE.Line(
-                        new THREE.BufferGeometry().setFromPoints(wavePoints),
-                        new THREE.LineBasicMaterial({ color: waveColor, transparent: true, opacity: 0.6 })
-                    ));
-                }
-            }
-
-            // Normalize Frequency Wall height neatly
-            const refFreq = (shape === 'cosine') ? wc : 0;
+            const refFreq = (shape === 'cosine' || shape === 'damped') ? wc : 0;
             const peakCTFT = Math.max(0.2, Math.abs(calculateCTFT(refFreq, A, tau, shape, wc)));
-            const freqScaleY = 4.8 / peakCTFT;
+            const freqScaleY = 5.2 / peakCTFT;
 
-            // --- C. Draw Continuous CTFT Spectrum |X(jw)| Curve & Shaded Area on Side Wall ---
-            if (showContSpectrum) {
-                const numFreqSamples = 350;
-                const envPoints = [];
-                const areaVertices = [];
+            // ========================================================================
+            // MODE 1: STANDARD 3D TIME-FREQUENCY DECOMPOSITION (VOLUMETRIC 3D)
+            // ========================================================================
+            if (mode === 'standard') {
+                const zTimeWall = 11.0;
+                const xFreqWall = -11.0;
 
-                for (let i = 0; i <= numFreqSamples; i++) {
-                    const w = -freqLimit + (2 * freqLimit * i) / numFreqSamples;
-                    const zPos = w * scaleZ;
+                // Axis labels
+                plotGroup.add(createTextLabel("Time t (s) →", 0, -0.7, zTimeWall + 1.2, "#79c0ff", 1.7));
+                plotGroup.add(createTextLabel("← Frequency ω (rad/s)", xFreqWall - 1.5, -0.7, 0, "#ff7b72", 1.7));
+
+                const numTimeSamples = 260;
+
+                // 1. Ideal Continuous Periodic Signal x_tilde(t) (Cyan 3D Tube + Ribbon)
+                if (showIdealPeriodic) {
+                    const pts = [];
+                    for (let i = 0; i <= numTimeSamples; i++) {
+                        const t = -timeLimit + (2 * timeLimit * i) / numTimeSamples;
+                        let val = 0.0;
+                        for (let m = -3; m <= 3; m++) {
+                            val += evaluateSinglePulse(t - t0 - m * T0, A, tau, shape, wc);
+                        }
+                        pts.push(new THREE.Vector3(t * scaleX, val * scaleY, zTimeWall - 0.55));
+                    }
+                    plotGroup.add(create3DTube(pts, 0.065, 0x00e5ff, 0.85));
+                    plotGroup.add(create3DRibbon(pts, 0x00e5ff, 0.12));
+                }
+
+                // 2. Continuous Non-Periodic Isolated Pulse x(t) (Vibrant Crimson 3D Tube + Ribbon)
+                if (showContPulse) {
+                    const pts = [];
+                    for (let i = 0; i <= numTimeSamples; i++) {
+                        const t = -timeLimit + (2 * timeLimit * i) / numTimeSamples;
+                        const val = evaluateSinglePulse(t - t0, A, tau, shape, wc);
+                        pts.push(new THREE.Vector3(t * scaleX, val * scaleY, zTimeWall + 0.55));
+                    }
+                    plotGroup.add(create3DTube(pts, 0.085, 0xff3366, 1.0));
+                    plotGroup.add(create3DRibbon(pts, 0xff3366, 0.24));
+                }
+
+                // 3. Fourier Series Synthesis x_hat_N(t) (Gold/Orange 3D Tube)
+                if (showFourierSum) {
+                    const pts = [];
+                    const c0 = calculateCTFT(0, A, tau, shape, wc) / T0;
+                    for (let i = 0; i <= numTimeSamples; i++) {
+                        const t = -timeLimit + (2 * timeLimit * i) / numTimeSamples;
+                        let sum = c0;
+                        for (let k = 1; k <= N; k++) {
+                            const wk = k * w0;
+                            const ck = calculateCTFT(wk, A, tau, shape, wc) / T0;
+                            sum += 2 * ck * Math.cos(wk * (t - t0));
+                        }
+                        pts.push(new THREE.Vector3(t * scaleX, sum * scaleY, zTimeWall));
+                    }
+                    plotGroup.add(create3DTube(pts, 0.075, 0xffa600, 1.0));
+                }
+
+                // 4. 3D Individual Harmonic Waves + Shaded Curtain Ribbons in the Interior
+                if (showSineWaves) {
+                    const maxK = Math.min(N, Math.floor(freqLimit / w0));
+                    for (let k = -maxK; k <= maxK; k++) {
+                        const wk = k * w0;
+                        const zPos = wk * scaleZ;
+                        const ck = calculateCTFT(wk, A, tau, shape, wc) / T0;
+                        const wavePts = [];
+
+                        for (let i = 0; i <= 130; i++) {
+                            const t = -timeLimit + (2 * timeLimit * i) / 130;
+                            const yVal = (k === 0) ? ck : ck * Math.cos(wk * (t - t0));
+                            wavePts.push(new THREE.Vector3(t * scaleX, yVal * scaleY * 1.6, zPos));
+                        }
+
+                        const waveColor = (k === 0) ? 0xffa600 : 0x22c55e;
+                        plotGroup.add(create3DTube(wavePts, 0.045, waveColor, 0.85));
+                        plotGroup.add(create3DRibbon(wavePts, waveColor, 0.14));
+                    }
+                }
+
+                // 5. Continuous CTFT Spectrum Envelope |X(jw)| (3D Tube + Shaded Wall)
+                if (showContSpectrum) {
+                    const envPts = [];
+                    const numFreq = 260;
+                    for (let i = 0; i <= numFreq; i++) {
+                        const w = -freqLimit + (2 * freqLimit * i) / numFreq;
+                        const rawX = calculateCTFT(w, A, tau, shape, wc);
+                        const val = showSigned ? rawX : Math.abs(rawX);
+                        envPts.push(new THREE.Vector3(xFreqWall, val * freqScaleY, w * scaleZ));
+                    }
+                    plotGroup.add(create3DTube(envPts, 0.085, 0xff3366, 1.0));
+                    plotGroup.add(create3DRibbon(envPts, 0xff3366, 0.25));
+                }
+
+                // 6. Discrete CTFS 3D Cylindrical Pillars (T0 * |ck|)
+                if (showDiscreteStems) {
+                    const maxHarm = Math.floor(freqLimit / w0);
+                    for (let k = -maxHarm; k <= maxHarm; k++) {
+                        const wk = k * w0;
+                        const zPos = wk * scaleZ;
+                        const rawT0_ck = calculateCTFT(wk, A, tau, shape, wc);
+                        const val = showSigned ? rawT0_ck : Math.abs(rawT0_ck);
+                        const h = val * freqScaleY;
+                        plotGroup.add(create3DPillar(xFreqWall + 0.18, zPos, h, 0.09, 0x38bdf8));
+                    }
+                }
+            }
+
+            // ========================================================================
+            // MODE 2: 3D PERIOD CONVERGENCE WATERFALL (T0 -> INFINITY)
+            // ========================================================================
+            else if (mode === 'waterfall') {
+                const periods = [2.0, 3.5, 5.5, 9.0, T0];
+                const sliceXPositions = [-8.5, -4.5, -0.5, 3.5, 7.2];
+                const sliceColors = [0x38bdf8, 0x22c55e, 0xa855f7, 0xffa600, 0x00e5ff];
+
+                for (let s = 0; s < periods.length; s++) {
+                    const P_curr = periods[s];
+                    const xSlice = sliceXPositions[s];
+                    const w0_curr = (2 * Math.PI) / P_curr;
+
+                    // Ghost CTFT envelope on each slice
+                    const envPts = [];
+                    for (let i = 0; i <= 160; i++) {
+                        const w = -freqLimit + (2 * freqLimit * i) / 160;
+                        const rawX = calculateCTFT(w, A, tau, shape, wc);
+                        const val = showSigned ? rawX : Math.abs(rawX);
+                        envPts.push(new THREE.Vector3(xSlice, val * freqScaleY, w * scaleZ));
+                    }
+                    plotGroup.add(create3DTube(envPts, 0.04, 0xff3366, 0.45));
+
+                    // 3D Pillars for harmonic lines at this period
+                    const maxH = Math.floor(freqLimit / w0_curr);
+                    for (let k = -maxH; k <= maxH; k++) {
+                        const wk = k * w0_curr;
+                        const rawVal = calculateCTFT(wk, A, tau, shape, wc);
+                        const val = showSigned ? rawVal : Math.abs(rawVal);
+                        plotGroup.add(create3DPillar(xSlice, wk * scaleZ, val * freqScaleY, 0.075, sliceColors[s]));
+                    }
+
+                    const lbl = (s === 4) ? `Your T0=${P_curr.toFixed(1)}s` : `T0=${P_curr.toFixed(1)}s`;
+                    plotGroup.add(createTextLabel(lbl, xSlice, -0.8, 11.2, "#79c0ff", 1.35));
+                }
+
+                // Back Wall at x = 10.5: Continuous Non-Periodic Limit (T0 -> Infinity)
+                const infPts = [];
+                for (let i = 0; i <= 240; i++) {
+                    const w = -freqLimit + (2 * freqLimit * i) / 240;
                     const rawX = calculateCTFT(w, A, tau, shape, wc);
                     const val = showSigned ? rawX : Math.abs(rawX);
-                    const yPos = val * freqScaleY;
-
-                    envPoints.push(new THREE.Vector3(xFreqWall, yPos, zPos));
-
-                    if (i < numFreqSamples) {
-                        const wNext = -freqLimit + (2 * freqLimit * (i + 1)) / numFreqSamples;
-                        const zNext = wNext * scaleZ;
-                        const rawNext = calculateCTFT(wNext, A, tau, shape, wc);
-                        const valNext = showSigned ? rawNext : Math.abs(rawNext);
-                        const yNext = valNext * freqScaleY;
-
-                        areaVertices.push(
-                            xFreqWall, 0, zPos,
-                            xFreqWall, yPos, zPos,
-                            xFreqWall, yNext, zNext,
-                            xFreqWall, 0, zPos,
-                            xFreqWall, yNext, zNext,
-                            xFreqWall, 0, zNext
-                        );
-                    }
+                    infPts.push(new THREE.Vector3(10.5, val * freqScaleY, w * scaleZ));
                 }
-
-                // Continuous spectrum outline curve
-                plotGroup.add(new THREE.Line(
-                    new THREE.BufferGeometry().setFromPoints(envPoints),
-                    new THREE.LineBasicMaterial({ color: 0xff3366, linewidth: 2 })
-                ));
-
-                // Shaded continuous spectral density fill
-                const areaGeo = new THREE.BufferGeometry();
-                areaGeo.setAttribute('position', new THREE.Float32BufferAttribute(areaVertices, 3));
-                plotGroup.add(new THREE.Mesh(
-                    areaGeo,
-                    new THREE.MeshBasicMaterial({
-                        color: 0xff3366,
-                        transparent: true,
-                        opacity: 0.22,
-                        side: THREE.DoubleSide
-                    })
-                ));
+                plotGroup.add(create3DTube(infPts, 0.1, 0xff3366, 1.0));
+                plotGroup.add(create3DRibbon(infPts, 0xff3366, 0.35));
+                plotGroup.add(createTextLabel("T0 → ∞ (CTFT)", 10.5, -0.8, 11.2, "#ff7b72", 1.45));
             }
 
-            // --- D. Draw Discrete CTFS Harmonic Stems (T0 * |ck|) on Side Wall ---
-            if (showDiscreteStems) {
-                const maxHarm = Math.floor(freqLimit / w0);
-                const stemMat = new THREE.LineBasicMaterial({ color: 0x38bdf8 });
-                const dotGeo = new THREE.SphereGeometry(0.12, 10, 10);
-                const dotMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+            // ========================================================================
+            // MODE 3: 3D COMPLEX PHASE HELIX (EFFECT OF TIME SHIFT t0)
+            // ========================================================================
+            else if (mode === 'phasor') {
+                const helixPts = [];
+                const realShadowPts = [];
+                const imagShadowPts = [];
+                const envMagPts = [];
 
+                const numFreq = 360;
+                for (let i = 0; i <= numFreq; i++) {
+                    const w = -freqLimit + (2 * freqLimit * i) / numFreq;
+                    const zPos = w * scaleZ;
+                    const X_real_base = calculateCTFT(w, A, tau, shape, wc);
+                    const phase = -w * t0;
+
+                    const reVal = X_real_base * Math.cos(phase) * freqScaleY * 0.75;
+                    const imVal = X_real_base * Math.sin(phase) * freqScaleY * 0.75;
+                    const magVal = Math.abs(X_real_base) * freqScaleY * 0.75;
+
+                    helixPts.push(new THREE.Vector3(imVal, reVal + 3.5, zPos));
+                    realShadowPts.push(new THREE.Vector3(-8.5, reVal + 3.5, zPos));
+                    imagShadowPts.push(new THREE.Vector3(imVal, 0.05, zPos));
+                    envMagPts.push(new THREE.Vector3(0, magVal + 3.5, zPos));
+                }
+
+                // 3D Complex Helix Tube
+                plotGroup.add(create3DTube(helixPts, 0.09, 0xff3366, 1.0));
+                // Invariant Magnitude Envelope Tube
+                plotGroup.add(create3DTube(envMagPts, 0.05, 0xffa600, 0.75));
+                // Real & Imaginary Wall Projections
+                plotGroup.add(create3DTube(realShadowPts, 0.045, 0x22c55e, 0.7));
+                plotGroup.add(create3DTube(imagShadowPts, 0.045, 0xa855f7, 0.7));
+
+                // Discrete Complex Harmonic Phasor Spokes
+                const maxHarm = Math.floor(freqLimit / w0);
                 for (let k = -maxHarm; k <= maxHarm; k++) {
                     const wk = k * w0;
                     const zPos = wk * scaleZ;
-                    const rawT0_ck = calculateCTFT(wk, A, tau, shape, wc);
-                    const val = showSigned ? rawT0_ck : Math.abs(rawT0_ck);
-                    const stemHeight = val * freqScaleY;
+                    const X_val = calculateCTFT(wk, A, tau, shape, wc);
+                    const phase = -wk * t0;
+                    const reVal = X_val * Math.cos(phase) * freqScaleY * 0.75;
+                    const imVal = X_val * Math.sin(phase) * freqScaleY * 0.75;
 
-                    plotGroup.add(new THREE.Line(
-                        new THREE.BufferGeometry().setFromPoints([
-                            new THREE.Vector3(xFreqWall, 0, zPos),
-                            new THREE.Vector3(xFreqWall, stemHeight, zPos)
-                        ]), stemMat
-                    ));
-
-                    const dot = new THREE.Mesh(dotGeo, dotMat);
-                    dot.position.set(xFreqWall, stemHeight, zPos);
-                    plotGroup.add(dot);
+                    const spokePts = [
+                        new THREE.Vector3(0, 3.5, zPos),
+                        new THREE.Vector3(imVal, reVal + 3.5, zPos)
+                    ];
+                    plotGroup.add(create3DTube(spokePts, 0.04, 0x38bdf8, 0.95));
                 }
+
+                plotGroup.add(createTextLabel("3D Complex Helix X(jω)·e^(-jωt0)", 0, 8.2, 0, "#ffa600", 1.8));
+            }
+
+            // Update 2D synchronized scope canvas
+            draw2DScope(A, T0, tau, N, t0, wc, shape, showSigned);
+        }
+
+        // ============================================================================
+        // 5. SYNCHRONIZED 2D REFERENCE OSCILLOSCOPE & SPECTRUM CANVAS
+        // ============================================================================
+        function draw2DScope(A, T0, tau, N, t0, wc, shape, showSigned) {
+            const canvas = document.getElementById('scopeCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const W = canvas.width;
+            const H = canvas.height;
+            ctx.clearRect(0, 0, W, H);
+
+            // Split left half = Time Domain, right half = Frequency Domain
+            const midX = W / 2;
+            ctx.strokeStyle = "#30363d";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(midX, 0); ctx.lineTo(midX, H);
+            ctx.moveTo(0, H * 0.65); ctx.lineTo(W, H * 0.65);
+            ctx.stroke();
+
+            // Labels
+            ctx.fillStyle = "#8b949e";
+            ctx.font = "10px Arial";
+            ctx.fillText("Time: x(t) [Red] vs x̃(t) [Cyan]", 8, 13);
+            ctx.fillText("Freq: |X(jω)| [Red] vs T0|ck| [Blue]", midX + 8, 13);
+
+            // Draw Time Signals on Left Half
+            const tMax = 4.5;
+            // Ideal Periodic
+            ctx.strokeStyle = "#00e5ff";
+            ctx.lineWidth = 1.3;
+            ctx.beginPath();
+            for (let px = 6; px < midX - 6; px++) {
+                const t = -tMax + (2 * tMax * (px - 6)) / (midX - 12);
+                let v = 0;
+                for (let m = -2; m <= 2; m++) v += evaluateSinglePulse(t - t0 - m * T0, A, tau, shape, wc);
+                const py = H * 0.65 - (v / 2.0) * (H * 0.42);
+                if (px === 6) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+
+            // Isolated Non-Periodic Pulse
+            ctx.strokeStyle = "#ff3366";
+            ctx.lineWidth = 2.0;
+            ctx.beginPath();
+            for (let px = 6; px < midX - 6; px++) {
+                const t = -tMax + (2 * tMax * (px - 6)) / (midX - 12);
+                const v = evaluateSinglePulse(t - t0, A, tau, shape, wc);
+                const py = H * 0.65 - (v / 2.0) * (H * 0.42);
+                if (px === 6) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+
+            // Draw Frequency Spectrum on Right Half
+            const wMax = 20.0;
+            const refFreq = (shape === 'cosine' || shape === 'damped') ? wc : 0;
+            const peak = Math.max(0.2, Math.abs(calculateCTFT(refFreq, A, tau, shape, wc)));
+
+            // Continuous CTFT Curve
+            ctx.strokeStyle = "#ff3366";
+            ctx.lineWidth = 1.8;
+            ctx.beginPath();
+            for (let px = midX + 6; px < W - 6; px++) {
+                const w = -wMax + (2 * wMax * (px - midX - 6)) / (midX - 12);
+                const raw = calculateCTFT(w, A, tau, shape, wc);
+                const val = showSigned ? raw : Math.abs(raw);
+                const py = H * 0.65 - (val / peak) * (H * 0.45);
+                if (px === midX + 6) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+
+            // Discrete CTFS Stems
+            const w0 = (2 * Math.PI) / T0;
+            const maxK = Math.floor(wMax / w0);
+            ctx.strokeStyle = "#38bdf8";
+            ctx.fillStyle = "#38bdf8";
+            ctx.lineWidth = 1.4;
+            for (let k = -maxK; k <= maxK; k++) {
+                const wk = k * w0;
+                const px = midX + 6 + ((wk + wMax) / (2 * wMax)) * (midX - 12);
+                const raw = calculateCTFT(wk, A, tau, shape, wc);
+                const val = showSigned ? raw : Math.abs(raw);
+                const py = H * 0.65 - (val / peak) * (H * 0.45);
+                ctx.beginPath();
+                ctx.moveTo(px, H * 0.65);
+                ctx.lineTo(px, py);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(px, py, 2.2, 0, 2 * Math.PI);
+                ctx.fill();
             }
         }
 
-        // --- 4. Camera View Switcher ---
+        // ============================================================================
+        // 6. CAMERA PRESETS, LIVE ANIMATIONS & SCREENSHOT EXPORT
+        // ============================================================================
         function changeCamera(view) {
             if (view === '3d') {
-                camera.position.set(19, 13, 23);
+                camera.position.set(20, 13.5, 23);
             } else if (view === 'time') {
-                camera.position.set(0, 2.5, 30);
+                camera.position.set(0, 2.8, 30);
             } else if (view === 'freq') {
-                camera.position.set(25, 3.0, 0);
+                camera.position.set(-28, 3.5, 0);
             } else if (view === 'top') {
                 camera.position.set(0, 34, 0.01);
             }
-            controls.target.set(0, 1.8, 0);
+            controls.target.set(0, 2.0, 0);
             controls.update();
+        }
+
+        let activeAnim = null;
+        let lastStepTime = 0;
+
+        function toggleAnimation(type) {
+            const btns = ['T0', 'N', 't0'];
+            if (activeAnim === type) {
+                activeAnim = null;
+            } else {
+                activeAnim = type;
+                if (type === 't0') {
+                    document.getElementById('viewMode').value = 'phasor';
+                }
+            }
+            btns.forEach(b => {
+                const el = document.getElementById('btn_anim_' + b);
+                if (el) el.classList.toggle('active-btn', activeAnim === b);
+            });
+            updatePlot();
+        }
+
+        function toggleScope() {
+            const show = document.getElementById('show2DScope').checked;
+            document.getElementById('scopePanel').style.display = show ? 'block' : 'none';
+        }
+
+        function saveScreenshot() {
+            renderer.render(scene, camera);
+            const link = document.createElement('a');
+            link.download = 'Signals_Systems_3D_Model.png';
+            link.href = renderer.domElement.toDataURL('image/png');
+            link.click();
         }
 
         window.addEventListener('resize', () => {
@@ -656,14 +988,38 @@
             renderer.setSize(container.clientWidth, container.clientHeight);
         });
 
-        function animate() {
+        function animate(timestamp) {
             requestAnimationFrame(animate);
+
+            if (activeAnim && timestamp - lastStepTime > 70) {
+                lastStepTime = timestamp;
+                if (activeAnim === 'T0') {
+                    const sl = document.getElementById('T0_slider');
+                    let v = parseFloat(sl.value) + 0.15;
+                    if (v > 12.0) v = 2.0;
+                    sl.value = v.toFixed(2);
+                    updatePlot();
+                } else if (activeAnim === 'N') {
+                    const sl = document.getElementById('N_slider');
+                    let v = parseInt(sl.value) + 1;
+                    if (v > 30) v = 1;
+                    sl.value = v;
+                    updatePlot();
+                } else if (activeAnim === 't0') {
+                    const sl = document.getElementById('t0_slider');
+                    let v = parseFloat(sl.value) + 0.05;
+                    if (v > 1.5) v = -1.5;
+                    sl.value = v.toFixed(2);
+                    updatePlot();
+                }
+            }
+
             controls.update();
             renderer.render(scene, camera);
         }
 
         updatePlot();
-        animate();
+        requestAnimationFrame(animate);
     </script>
 </body>
 </html>
