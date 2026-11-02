@@ -1,6 +1,6 @@
 # Signals & Systems PBL — 3D Fourier Domain Visualizer
 
-**Live Interactive Simulation:** [https://tspratham09-hue.github.io/PBL-Simulation/](https://tspratham09-hue.github.io/PBL-Simulation/)
+**Live Interactive Simulation:** [https://tspratham09-hue.github.io/Periodic-and-Non-Periodic-Simulation/](https://tspratham09-hue.github.io/Periodic-and-Non-Periodic-Simulation/)
 
 ## Project Overview
 This project investigates **why periodic and non-periodic continuous-time signals behave differently in the frequency domain** using **Continuous-Time Fourier Series (CTFS)** and **Continuous-Time Fourier Transform (CTFT)** concepts.
