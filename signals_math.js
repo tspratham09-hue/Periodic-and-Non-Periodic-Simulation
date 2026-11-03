@@ -1,7 +1,7 @@
 // =========================================================================
 // signals_math.js
 // Mathematical functions for Continuous-Time Fourier Series (CTFS),
-// Continuous-Time Fourier Transform (CTFT), Parseval's Theorem & CSV Export
+// Continuous-Time Fourier Transform (CTFT), MSE, Parseval's Theorem & CSV
 // =========================================================================
 
 // Normalized sinc function: sinc(x) = sin(pi * x) / (pi * x)
@@ -86,9 +86,9 @@ function getWaveformDetails(A, tau, shape) {
     }
 }
 
-// Compute Parseval's Theorem power percentage captured by N harmonics
-function computeParsevalCapture(A, T0, tau, N, shape, wc, totalPower) {
-    if (totalPower <= 1e-9) return 100.0;
+// Compute Parseval's Theorem power percentage and MSE over one period
+function computeSignalMetrics(A, T0, tau, N, shape, wc, totalPower) {
+    if (totalPower <= 1e-9) return { pct: 100.0, mse: 0.0 };
     const w0 = (2 * Math.PI) / T0;
     const c0 = calculateCTFT(0, A, tau, shape, wc) / T0;
     let pCaptured = c0 * c0;
@@ -97,7 +97,9 @@ function computeParsevalCapture(A, T0, tau, N, shape, wc, totalPower) {
         const ck = calculateCTFT(k * w0, A, tau, shape, wc) / T0;
         pCaptured += 2.0 * (ck * ck);
     }
-    return Math.min(100.0, (pCaptured / totalPower) * 100.0);
+    const pct = Math.min(100.0, (pCaptured / totalPower) * 100.0);
+    const mse = Math.max(0.0, totalPower - pCaptured);
+    return { pct, mse };
 }
 
 // Populate the HTML Harmonics Verification Table

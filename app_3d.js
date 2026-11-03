@@ -1,7 +1,7 @@
 // =========================================================================
 // app_3d.js
 // 3D WebGL Renderer (Three.js), Volumetric Tube & Pillar Generators,
-// Synchronized 2D Reference Scope, and Interactive UI Controls
+// Single Harmonic Highlighter, Experiment Presets, and 2D Reference Scope
 // =========================================================================
 
 const container = document.getElementById('viewer-container');
@@ -113,21 +113,75 @@ function create3DPillar(x, z, height, radius, colorHex) {
 
 function createTextLabel(text, x, y, z, colorStr = "#8b949e", scaleSize = 1.6) {
     const canvas = document.createElement('canvas');
-    canvas.width = 256;
+    canvas.width = 280;
     canvas.height = 64;
     const ctx = canvas.getContext('2d');
-    ctx.font = "bold 26px Consolas, Arial";
+    ctx.font = "bold 25px Consolas, Arial";
     ctx.fillStyle = colorStr;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(text, 128, 32);
+    ctx.fillText(text, 140, 32);
 
     const tex = new THREE.CanvasTexture(canvas);
     const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
     const sprite = new THREE.Sprite(mat);
     sprite.position.set(x, y, z);
-    sprite.scale.set(scaleSize * 2.2, scaleSize * 0.55, 1);
+    sprite.scale.set(scaleSize * 2.3, scaleSize * 0.55, 1);
     return sprite;
+}
+
+// --- Quick Viva Experiment Preset Handler ---
+function applyExperimentPreset() {
+    const preset = document.getElementById('presetSelect').value;
+    const noteBox = document.getElementById('preset_note');
+
+    if (preset === 'exp1') {
+        document.getElementById('viewMode').value = 'standard';
+        document.getElementById('pulseShape').value = 'rect';
+        document.getElementById('T0_slider').value = 4.0;
+        document.getElementById('tau_slider').value = 1.0;
+        document.getElementById('N_slider').value = 11;
+        document.getElementById('t0_slider').value = 0.0;
+        document.getElementById('k_inspect_slider').value = -1;
+        changeCamera('3d');
+        noteBox.innerText = "Exp 1: Observe how the blue discrete CTFS stems (T0·|ck|) sit directly on top of the red continuous CTFT sinc envelope |X(jω)|.";
+    } else if (preset === 'exp2') {
+        document.getElementById('viewMode').value = 'waterfall';
+        document.getElementById('pulseShape').value = 'rect';
+        document.getElementById('T0_slider').value = 10.0;
+        document.getElementById('tau_slider').value = 1.0;
+        changeCamera('3d');
+        noteBox.innerText = "Exp 2: As Period T0 increases toward ∞, fundamental spacing ω0 = 2π/T0 shrinks and the discrete harmonic stems merge into the continuous CTFT wall.";
+    } else if (preset === 'exp3') {
+        document.getElementById('viewMode').value = 'standard';
+        document.getElementById('pulseShape').value = 'rect';
+        document.getElementById('T0_slider').value = 5.0;
+        document.getElementById('tau_slider').value = 0.5;
+        changeCamera('freq');
+        noteBox.innerText = "Exp 3: Narrowing pulse width τ to 0.5s stretches the frequency main lobe wider (BW = 4π/τ = 25.13 rad/s) — proving the Time-Frequency Scaling property.";
+    } else if (preset === 'exp4') {
+        document.getElementById('viewMode').value = 'standard';
+        document.getElementById('pulseShape').value = 'tri';
+        document.getElementById('T0_slider').value = 4.0;
+        document.getElementById('tau_slider').value = 1.2;
+        document.getElementById('N_slider').value = 9;
+        changeCamera('time');
+        noteBox.innerText = "Exp 4: Switching from Rectangular to Triangular removes sharp discontinuities, eliminating Gibbs ringing and making side-lobes decay faster as sinc².";
+    } else if (preset === 'exp5') {
+        document.getElementById('viewMode').value = 'phasor';
+        document.getElementById('pulseShape').value = 'rect';
+        document.getElementById('t0_slider').value = 0.45;
+        changeCamera('3d');
+        noteBox.innerText = "Exp 5: Delaying the pulse by t0 = 0.45s twists the complex spectrum into a 3D helix e^(-jωt0), while the outer gold magnitude envelope |X(jω)| stays unchanged.";
+    } else if (preset === 'exp6') {
+        document.getElementById('viewMode').value = 'energy';
+        document.getElementById('pulseShape').value = 'gauss';
+        document.getElementById('T0_slider').value = 4.0;
+        document.getElementById('tau_slider').value = 1.0;
+        changeCamera('3d');
+        noteBox.innerText = "Exp 6: Side-by-side comparison of Periodic Discrete Power Spectrum |ck|² (front slice) vs. Non-Periodic Continuous Energy Spectral Density |X(jω)|² (back slice).";
+    }
+    updatePlot();
 }
 
 // --- Main Plot Update Function ---
@@ -143,6 +197,7 @@ function updatePlot() {
     const T0 = parseFloat(document.getElementById('T0_slider').value);
     let tau = parseFloat(document.getElementById('tau_slider').value);
     const N = parseInt(document.getElementById('N_slider').value);
+    const kInspect = parseInt(document.getElementById('k_inspect_slider').value);
     const t0 = parseFloat(document.getElementById('t0_slider').value);
     const wc = parseFloat(document.getElementById('wc_slider').value);
 
@@ -165,7 +220,7 @@ function updatePlot() {
     const w0 = (2 * Math.PI) / T0;
     const info = getWaveformDetails(A, tau, shape);
     const totalPower = info.energy / T0;
-    const parsevalPct = computeParsevalCapture(A, T0, tau, N, shape, wc, totalPower);
+    const metrics = computeSignalMetrics(A, T0, tau, N, shape, wc, totalPower);
 
     // Update UI Readouts
     document.getElementById('formula_display').innerText = info.formula;
@@ -173,6 +228,7 @@ function updatePlot() {
     document.getElementById('T0_val').innerText = T0.toFixed(1) + " s";
     document.getElementById('tau_val').innerText = tau.toFixed(1) + " s";
     document.getElementById('N_val').innerText = N;
+    document.getElementById('k_inspect_val').innerText = (kInspect < 0) ? "All" : ("k = ±" + kInspect);
     document.getElementById('t0_val').innerText = t0.toFixed(2) + " s";
     document.getElementById('wc_val').innerText = wc.toFixed(1) + " rad/s";
 
@@ -181,8 +237,22 @@ function updatePlot() {
     document.getElementById('out_duty').innerText = ((tau / T0) * 100).toFixed(1) + " %";
     document.getElementById('out_energy').innerText = info.energy.toFixed(2) + " J";
     document.getElementById('out_power').innerText = totalPower.toFixed(3) + " W";
-    document.getElementById('out_parseval').innerText = parsevalPct.toFixed(1) + " %";
-    document.getElementById('parseval_bar').style.width = parsevalPct.toFixed(0) + "%";
+    document.getElementById('out_mse').innerText = metrics.mse.toFixed(4);
+    document.getElementById('out_parseval').innerText = metrics.pct.toFixed(1) + " %";
+    document.getElementById('parseval_bar').style.width = metrics.pct.toFixed(0) + "%";
+
+    // Update Single Harmonic Inspector Banner
+    const banner = document.getElementById('harmonicBanner');
+    if (kInspect >= 0) {
+        const wk_ins = kInspect * w0;
+        const X_ins = calculateCTFT(wk_ins, A, tau, shape, wc);
+        const ck_ins = Math.abs(X_ins) / T0;
+        banner.style.display = 'block';
+        document.getElementById('harmonicBannerText').innerText =
+            `Inspecting Harmonic k = ${kInspect}  |  ω_${kInspect} = ${wk_ins.toFixed(2)} rad/s  |  |c_${kInspect}| = ${ck_ins.toFixed(4)}  |  T0·|c_${kInspect}| = |X(jω_${kInspect})| = ${Math.abs(X_ins).toFixed(4)}`;
+    } else {
+        banner.style.display = 'none';
+    }
 
     updateHarmonicsTable(A, T0, tau, N, t0, shape, wc);
 
@@ -261,9 +331,14 @@ function updatePlot() {
                     wavePts.push(new THREE.Vector3(t * scaleX, yVal * scaleY * 1.6, zPos));
                 }
 
-                const waveColor = (k === 0) ? 0xffa600 : 0x22c55e;
-                plotGroup.add(create3DTube(wavePts, 0.045, waveColor, 0.85));
-                plotGroup.add(create3DRibbon(wavePts, waveColor, 0.14));
+                const isHighlighted = (kInspect >= 0 && Math.abs(k) === kInspect);
+                const isDimmed = (kInspect >= 0 && Math.abs(k) !== kInspect);
+                const waveColor = isHighlighted ? 0xfde047 : ((k === 0) ? 0xffa600 : 0x22c55e);
+                const tubeRad = isHighlighted ? 0.095 : 0.045;
+                const tubeOp = isDimmed ? 0.22 : 0.90;
+
+                plotGroup.add(create3DTube(wavePts, tubeRad, waveColor, tubeOp));
+                plotGroup.add(create3DRibbon(wavePts, waveColor, isHighlighted ? 0.32 : (isDimmed ? 0.04 : 0.14)));
             }
         }
 
@@ -288,7 +363,11 @@ function updatePlot() {
                 const rawT0_ck = calculateCTFT(wk, A, tau, shape, wc);
                 const val = showSigned ? rawT0_ck : Math.abs(rawT0_ck);
                 const h = val * freqScaleY;
-                plotGroup.add(create3DPillar(xFreqWall + 0.18, zPos, h, 0.09, 0x38bdf8));
+
+                const isHighlighted = (kInspect >= 0 && Math.abs(k) === kInspect);
+                const stemColor = isHighlighted ? 0xfde047 : 0x38bdf8;
+                const stemRad = isHighlighted ? 0.14 : 0.09;
+                plotGroup.add(create3DPillar(xFreqWall + 0.18, zPos, h, stemRad, stemColor));
             }
         }
     }
@@ -385,6 +464,37 @@ function updatePlot() {
         plotGroup.add(createTextLabel("3D Complex Helix X(jω)·e^(-jωt0)", 0, 8.2, 0, "#ffa600", 1.8));
     }
 
+    // Mode 4: Energy Spectral Density |X(jw)|^2 vs Power Spectrum |ck|^2
+    else if (mode === 'energy') {
+        const xPowerPlane = -4.5;
+        const xEnergyPlane = 4.5;
+        const esdPeak = Math.pow(peakCTFT, 2);
+        const esdScaleY = 5.5 / Math.max(0.1, esdPeak);
+
+        // Back Plane: Continuous Energy Spectral Density |X(jw)|^2
+        const esdPts = [];
+        for (let i = 0; i <= 250; i++) {
+            const w = -freqLimit + (2 * freqLimit * i) / 250;
+            const rawX = calculateCTFT(w, A, tau, shape, wc);
+            const esd = (rawX * rawX) * esdScaleY;
+            esdPts.push(new THREE.Vector3(xEnergyPlane, esd, w * scaleZ));
+        }
+        plotGroup.add(create3DTube(esdPts, 0.095, 0xff3366, 1.0));
+        plotGroup.add(create3DRibbon(esdPts, 0xff3366, 0.30));
+        plotGroup.add(createTextLabel("Non-Periodic ESD |X(jω)|² (Energy Signal)", xEnergyPlane, 6.4, 0, "#ff3366", 1.7));
+
+        // Front Plane: Discrete Power Spectrum Pillars (T0^2 * |ck|^2)
+        const maxHarm = Math.floor(freqLimit / w0);
+        for (let k = -maxHarm; k <= maxHarm; k++) {
+            const wk = k * w0;
+            const rawX = calculateCTFT(wk, A, tau, shape, wc);
+            const pHeight = (rawX * rawX) * esdScaleY;
+            const isHighlighted = (kInspect >= 0 && Math.abs(k) === kInspect);
+            plotGroup.add(create3DPillar(xPowerPlane, wk * scaleZ, pHeight, isHighlighted ? 0.15 : 0.10, isHighlighted ? 0xfde047 : 0x38bdf8));
+        }
+        plotGroup.add(createTextLabel("Periodic Power Spectrum |ck|² (Power Signal)", xPowerPlane, 6.4, 0, "#38bdf8", 1.7));
+    }
+
     draw2DScope(A, T0, tau, N, t0, wc, shape, showSigned);
 }
 
@@ -471,7 +581,7 @@ function draw2DScope(A, T0, tau, N, t0, wc, shape, showSigned) {
     }
 }
 
-// --- UI Actions, Theme Toggle & Animations ---
+// --- UI Actions, Modals, Theme Toggle & Animations ---
 function changeCamera(view) {
     if (view === '3d') camera.position.set(20, 13.5, 23);
     else if (view === 'time') camera.position.set(0, 2.8, 30);
@@ -499,6 +609,13 @@ function toggleTheme() {
 
 function toggleTableModal() {
     const modal = document.getElementById('tableModal');
+    document.getElementById('theoryModal').style.display = 'none';
+    modal.style.display = (modal.style.display === 'none') ? 'flex' : 'none';
+}
+
+function toggleTheoryModal() {
+    const modal = document.getElementById('theoryModal');
+    document.getElementById('tableModal').style.display = 'none';
     modal.style.display = (modal.style.display === 'none') ? 'flex' : 'none';
 }
 

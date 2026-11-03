@@ -7,7 +7,7 @@
     --bg-main: #0d1117;
     --bg-sidebar: #161b22;
     --bg-card: #21262d;
-    --bg-overlay: rgba(22, 27, 34, 0.92);
+    --bg-overlay: rgba(22, 27, 34, 0.94);
     --border-col: #30363d;
     --text-main: #e6edf3;
     --text-muted: #8b949e;
@@ -19,7 +19,7 @@ body.light-mode {
     --bg-main: #f1f5f9;
     --bg-sidebar: #ffffff;
     --bg-card: #f8fafc;
-    --bg-overlay: rgba(255, 255, 255, 0.94);
+    --bg-overlay: rgba(255, 255, 255, 0.95);
     --border-col: #cbd5e1;
     --text-main: #0f172a;
     --text-muted: #475569;
@@ -42,14 +42,14 @@ body {
 }
 
 .sidebar {
-    width: 345px;
+    width: 350px;
     background-color: var(--bg-sidebar);
-    padding: 14px 16px;
+    padding: 12px 15px;
     border-right: 1px solid var(--border-col);
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 9px;
+    gap: 8px;
 }
 
 .header-row {
@@ -57,50 +57,61 @@ body {
     justify-content: space-between;
     align-items: flex-start;
     border-bottom: 1px solid var(--border-col);
-    padding-bottom: 8px;
+    padding-bottom: 7px;
 }
 
 h2 {
     margin: 0;
-    font-size: 17px;
+    font-size: 16.5px;
     color: var(--accent);
 }
 
 .subtitle {
-    font-size: 11.5px;
+    font-size: 11px;
     color: var(--text-muted);
     margin-top: 2px;
 }
 
 .icon-btn {
-    padding: 5px 8px;
+    padding: 4px 8px;
     font-size: 11px;
     flex: none;
 }
 
 .control-group {
     background: var(--bg-card);
-    padding: 8px 11px;
+    padding: 8px 10px;
     border-radius: 6px;
     border: 1px solid var(--border-col);
 }
 
 .section-title {
-    font-size: 11px;
+    font-size: 10.8px;
     font-weight: bold;
     color: var(--accent);
     text-transform: uppercase;
     letter-spacing: 0.4px;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
     display: block;
+}
+
+.preset-note {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 5px;
+    line-height: 1.4;
+    padding: 4px 6px;
+    background: var(--bg-main);
+    border-left: 2px solid #eab308;
+    border-radius: 3px;
 }
 
 label {
     display: flex;
     justify-content: space-between;
-    font-size: 12px;
-    margin-top: 4px;
-    margin-bottom: 2px;
+    font-size: 11.8px;
+    margin-top: 3px;
+    margin-bottom: 1px;
     font-weight: 600;
 }
 
@@ -126,13 +137,13 @@ input[type="range"] {
 
 select {
     width: 100%;
-    padding: 6px 8px;
+    padding: 5px 7px;
     background: var(--bg-main);
     color: var(--text-main);
     border: 1px solid var(--border-col);
     border-radius: 4px;
     margin-top: 2px;
-    font-size: 12px;
+    font-size: 11.8px;
     cursor: pointer;
 }
 
@@ -148,21 +159,21 @@ select {
     gap: 5px;
 }
 
-.tool-row {
+.tool-row3 {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 5px;
-    margin-top: 6px;
+    margin-top: 5px;
 }
 
 button {
-    padding: 6px 5px;
+    padding: 5px 4px;
     background-color: var(--bg-card);
     color: var(--text-main);
     border: 1px solid var(--border-col);
     border-radius: 4px;
     cursor: pointer;
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 600;
     transition: background 0.15s, border-color 0.15s;
 }
@@ -180,8 +191,8 @@ button.active-btn {
 }
 
 .checkbox-group {
-    font-size: 12px;
-    line-height: 1.65;
+    font-size: 11.8px;
+    line-height: 1.6;
 }
 
 .checkbox-group input {
@@ -192,11 +203,11 @@ button.active-btn {
 
 .results-box {
     background-color: var(--bg-main);
-    padding: 9px 11px;
+    padding: 8px 10px;
     border-left: 3px solid var(--accent);
     border-radius: 4px;
-    font-size: 11.8px;
-    line-height: 1.6;
+    font-size: 11.5px;
+    line-height: 1.55;
 }
 
 .progress-bar-bg {
@@ -204,7 +215,7 @@ button.active-btn {
     height: 6px;
     background: var(--border-col);
     border-radius: 3px;
-    margin-top: 5px;
+    margin-top: 4px;
     overflow: hidden;
 }
 
@@ -217,10 +228,10 @@ button.active-btn {
 .formula-text {
     color: #eab308;
     font-family: Consolas, monospace;
-    font-size: 11px;
+    font-size: 10.8px;
     display: block;
-    margin-top: 5px;
-    padding: 4px 6px;
+    margin-top: 4px;
+    padding: 3px 6px;
     background: var(--bg-main);
     border-radius: 4px;
 }
@@ -235,11 +246,27 @@ button.active-btn {
     top: 12px;
     left: 12px;
     background: var(--bg-overlay);
-    padding: 10px 14px;
+    padding: 9px 13px;
     border: 1px solid var(--border-col);
     border-radius: 6px;
-    font-size: 11.8px;
-    line-height: 1.65;
+    font-size: 11.5px;
+    line-height: 1.6;
+    pointer-events: none;
+}
+
+.harmonic-banner {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(234, 179, 8, 0.18);
+    border: 1px solid #eab308;
+    color: #fde047;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: Consolas, monospace;
+    font-weight: bold;
     pointer-events: none;
 }
 
@@ -286,40 +313,68 @@ button.active-btn {
     display: block;
 }
 
-/* Harmonics Table Modal */
-.table-modal {
+/* Modals (Theory Sheet & Harmonics Table) */
+.table-modal, .theory-modal {
     position: absolute;
     top: 12px;
     right: 12px;
-    width: 510px;
-    max-height: 55vh;
+    width: 530px;
+    max-height: 62vh;
     background: var(--bg-overlay);
     border: 1px solid var(--border-col);
     border-radius: 6px;
-    padding: 10px 12px;
+    padding: 10px 14px;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+    z-index: 20;
 }
 
 .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 12px;
+    font-size: 12.5px;
     padding-bottom: 6px;
     border-bottom: 1px solid var(--border-col);
 }
 
 .close-btn {
-    padding: 2px 7px;
+    padding: 2px 8px;
     font-size: 11px;
+}
+
+.theory-content {
+    overflow-y: auto;
+    font-size: 12px;
+    line-height: 1.55;
+    margin-top: 6px;
+    padding-right: 4px;
+}
+
+.theory-content h4 {
+    margin: 8px 0 4px 0;
+    color: var(--accent);
+}
+
+.theory-content ul {
+    margin: 4px 0 8px 18px;
+    padding: 0;
+}
+
+.math-block {
+    background: var(--bg-main);
+    padding: 7px 10px;
+    border-left: 3px solid #eab308;
+    font-family: Consolas, monospace;
+    font-size: 11.2px;
+    border-radius: 4px;
 }
 
 .table-scroll {
     overflow-y: auto;
     margin-top: 6px;
-    max-height: 45vh;
+    max-height: 48vh;
 }
 
 table {

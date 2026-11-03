@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Fourier Domain Visualizer | Signals & Systems</title>
+    <title>3D Fourier Domain Visualizer | Signals & Systems PBL</title>
 
     <!-- Three.js and OrbitControls -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -34,6 +34,23 @@
             <button onclick="changeCamera('top')">Top View</button>
         </div>
 
+        <!-- Quick Viva Experiment Presets (For Explaining to Lecturers) -->
+        <div class="control-group">
+            <span class="section-title">Quick Presentation Experiments</span>
+            <select id="presetSelect" onchange="applyExperimentPreset()">
+                <option value="custom">-- Select Experiment to Demonstrate --</option>
+                <option value="exp1">Exp 1: Base Comparison (Periodic vs Non-Periodic)</option>
+                <option value="exp2">Exp 2: Period T0 → ∞ (Discrete Merges to Continuous)</option>
+                <option value="exp3">Exp 3: Narrow Pulse τ (Bandwidth Expansion)</option>
+                <option value="exp4">Exp 4: Gibbs Phenomenon (Rect vs Triangular)</option>
+                <option value="exp5">Exp 5: Time Shift t0 (Phase Changes, Mag Constant)</option>
+                <option value="exp6">Exp 6: Energy vs. Power Signal Spectrum</option>
+            </select>
+            <div id="preset_note" class="preset-note">
+                Tip: Pick an experiment above during your viva to auto-configure the 3D view and explain the observation.
+            </div>
+        </div>
+
         <!-- 3D Analysis Mode -->
         <div class="control-group">
             <span class="section-title">3D Analysis Mode</span>
@@ -41,6 +58,7 @@
                 <option value="standard">Mode 1: 3D Time-Frequency Decomposition</option>
                 <option value="waterfall">Mode 2: Period Convergence Waterfall (T0 → ∞)</option>
                 <option value="phasor">Mode 3: 3D Complex Phase Helix (Time Shift)</option>
+                <option value="energy">Mode 4: Energy Density |X(jω)|² vs Power |ck|²</option>
             </select>
         </div>
 
@@ -73,6 +91,9 @@
             <label><span>Harmonics (N):</span><span id="N_val" class="val-badge">11</span></label>
             <input type="range" id="N_slider" min="1" max="30" step="1" value="11" oninput="updatePlot()">
 
+            <label><span>Inspect Single Harmonic (k):</span><span id="k_inspect_val" class="val-badge">All</span></label>
+            <input type="range" id="k_inspect_slider" min="-1" max="30" step="1" value="-1" oninput="updatePlot()">
+
             <label><span>Time Shift (t0):</span><span id="t0_val" class="val-badge">0.00 s</span></label>
             <input type="range" id="t0_slider" min="-1.5" max="1.5" step="0.05" value="0.0" oninput="updatePlot()">
 
@@ -82,17 +103,18 @@
             </div>
         </div>
 
-        <!-- Classroom Demo Animations & Data Tools -->
+        <!-- Classroom Demo Animations & Reference Modals -->
         <div class="control-group">
-            <span class="section-title">Interactive Demos & Data Export</span>
+            <span class="section-title">Presentation Tools & Data</span>
             <div class="anim-row">
                 <button id="btn_anim_T0" onclick="toggleAnimation('T0')">Sweep T0→∞</button>
                 <button id="btn_anim_N" onclick="toggleAnimation('N')">Sweep N</button>
                 <button id="btn_anim_t0" onclick="toggleAnimation('t0')">Sweep Shift</button>
             </div>
-            <div class="tool-row">
-                <button onclick="toggleTableModal()">📊 Harmonics Table</button>
-                <button onclick="exportHarmonicsCSV()">📥 Export CSV</button>
+            <div class="tool-row3">
+                <button onclick="toggleTheoryModal()">📖 Theory Notes</button>
+                <button onclick="toggleTableModal()">📊 Harmonics</button>
+                <button onclick="exportHarmonicsCSV()">📥 CSV</button>
             </div>
         </div>
 
@@ -111,12 +133,13 @@
 
         <!-- Parseval's Theorem & Live Signal Metrics -->
         <div class="results-box">
-            <strong>Parseval's Power & Signal Metrics:</strong><br>
+            <strong>Live Signal & Parseval Metrics:</strong><br>
             Fundamental (ω0): <span id="out_w0" class="val-badge">1.57 rad/s</span><br>
             Main Lobe BW: <span id="out_bw" class="val-badge">12.57 rad/s</span><br>
             Duty Cycle (τ/T0): <span id="out_duty" class="val-badge">25.0 %</span><br>
-            Pulse Energy (E): <span id="out_energy" class="val-badge">1.00 J</span><br>
+            Non-Periodic Energy (E): <span id="out_energy" class="val-badge">1.00 J</span><br>
             Periodic Power (P): <span id="out_power" class="val-badge">0.250 W</span><br>
+            Approx Error (MSE): <span id="out_mse" class="val-badge">0.0120</span><br>
             N-Harmonic Power Capture: <span id="out_parseval" class="val-badge">95.2 %</span>
             <div class="progress-bar-bg">
                 <div id="parseval_bar" class="progress-bar-fill" style="width: 95%;"></div>
@@ -134,8 +157,44 @@
             <div><span class="dot" style="background:#ffa600;"></span>Fourier Series Synthesis x̂_N(t)</div>
             <strong style="display:block; margin-top:4px;">Frequency Domain (Side Wall & 3D):</strong>
             <div><span class="dot" style="background:#22c55e;"></span>3D Harmonic Components (k·ω0)</div>
+            <div><span class="dot" style="background:#fde047;"></span>Highlighted Harmonic Inspector (k)</div>
             <div><span class="dot" style="background:#38bdf8;"></span>Discrete CTFS Stems (T0·|ck|)</div>
             <div><span class="dot" style="background:#ff3366;"></span>Continuous CTFT Envelope |X(jω)|</div>
+        </div>
+
+        <!-- Single Harmonic Inspector Banner (Shown when k >= 0 is selected) -->
+        <div id="harmonicBanner" class="harmonic-banner" style="display: none;">
+            <span id="harmonicBannerText">Inspecting Harmonic k = 1</span>
+        </div>
+
+        <!-- Theory & Viva Explanation Sheet Modal (Hidden by default) -->
+        <div id="theoryModal" class="theory-modal" style="display: none;">
+            <div class="modal-header">
+                <strong>📖 Signals & Systems Viva Explanation Guide (Periodic vs. Non-Periodic)</strong>
+                <button onclick="toggleTheoryModal()" class="close-btn">✕ Close</button>
+            </div>
+            <div class="theory-content">
+                <h4>1. Why Do Periodic and Non-Periodic Signals Behave Differently?</h4>
+                <ul>
+                    <li><strong>Periodic Signal x̃(t) = x̃(t + T0):</strong> Repeats continuously over (-∞, ∞). Because it repeats every T0 seconds, only sinusoids at exact integer multiples of the fundamental frequency (<strong>ω0 = 2π / T0</strong>) constructively interfere. All other frequencies cancel out, producing a <strong>Discrete Line Spectrum (CTFS)</strong>.</li>
+                    <li><strong>Non-Periodic Signal x(t):</strong> Exists only for a finite duration τ and never repeats (equivalent to <strong>T0 → ∞</strong>). Synthesizing a signal that stays exactly zero outside [-τ/2, τ/2] requires an uncountably infinite continuum of frequencies, producing a <strong>Continuous Spectrum X(jω) (CTFT)</strong>.</li>
+                </ul>
+
+                <h4>2. Mathematical Bridge Equation (CTFS ↔ CTFT)</h4>
+                <p class="math-block">
+                    CTFT of Single Pulse:   X(jω) = ∫ x(t) e^(-jωt) dt = A·τ·sinc(ωτ / 2π)<br>
+                    CTFS of Periodic Train: ck = (1 / T0) ∫ x̃(t) e^(-jkω0t) dt = (1 / T0) · X(j·kω0)<br>
+                    <strong>Bridge Relation:  T0 · ck = X(jω) |_(ω = kω0)</strong>
+                </p>
+
+                <h4>3. How Signal Modifications Affect the Spectrum</h4>
+                <ul>
+                    <li><strong>Increasing Period T0:</strong> Fundamental spacing ω0 = 2π/T0 shrinks. The discrete harmonic stems pack closer together and merge into the continuous CTFT envelope as T0 → ∞.</li>
+                    <li><strong>Decreasing Pulse Width τ (Time Compression):</strong> By the Time-Frequency Scaling Property, compressing a pulse in time expands its spectrum in frequency (Main Lobe Width = 4π/τ).</li>
+                    <li><strong>Time Shifting x(t - t0):</strong> Magnitude |X(jω)| and |ck| remain completely unchanged; phase shifts linearly by -ω·t0 (twisting the complex spectrum into a 3D helix).</li>
+                    <li><strong>Edge Smoothness (Rectangular vs. Triangular):</strong> Sharp discontinuities in a rectangular pulse cause slow 1/ω side-lobe decay and ~9% Gibbs overshoot. A smooth triangular pulse decays faster at 1/ω² (sinc²).</li>
+                </ul>
+            </div>
         </div>
 
         <!-- Harmonics Inspector Modal (Hidden by default) -->
