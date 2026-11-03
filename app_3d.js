@@ -111,22 +111,76 @@ function create3DPillar(x, z, height, radius, colorHex) {
     return group;
 }
 
-function createTextLabel(text, x, y, z, colorStr = "#8b949e", scaleSize = 1.6) {
+// Helper to draw a rounded rectangle badge on a 2D canvas
+function drawRoundedBadge(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+}
+
+// Dynamic-width, crystal-clear 3D Text Sprite generator (prevents cropped edges and WebGL mipmap glitches)
+function createTextLabel(text, x, y, z, colorStr = "#8b949e", scaleSize = 1.5) {
     const canvas = document.createElement('canvas');
-    canvas.width = 280;
-    canvas.height = 64;
     const ctx = canvas.getContext('2d');
-    ctx.font = "bold 25px Consolas, Arial";
-    ctx.fillStyle = colorStr;
+
+    const fontStr = "bold 36px 'Segoe UI', Arial, sans-serif";
+    ctx.font = fontStr;
+    const textMetrics = ctx.measureText(text);
+
+    const padX = 36;
+    const width = Math.ceil(textMetrics.width) + padX * 2;
+    const height = 80;
+
+    canvas.width = width;
+    canvas.height = height;
+
+    // Re-apply font after canvas resize
+    ctx.font = fontStr;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(text, 140, 32);
 
+    // Subtle dark/light pill background so text is always readable over 3D waveforms
+    ctx.fillStyle = isLightMode ? "rgba(255, 255, 255, 0.90)" : "rgba(13, 17, 23, 0.82)";
+    drawRoundedBadge(ctx, 4, 8, width - 8, height - 16, 14);
+    ctx.fill();
+
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = colorStr;
+    ctx.stroke();
+
+    // Draw full text in the exact center
+    ctx.fillStyle = colorStr;
+    ctx.fillText(text, width / 2, height / 2 + 1);
+
+    // Disable mipmaps and use LinearFilter to prevent missing letters on non-power-of-2 textures
     const tex = new THREE.CanvasTexture(canvas);
-    const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    tex.generateMipmaps = false;
+    tex.needsUpdate = true;
+
+    const mat = new THREE.SpriteMaterial({
+        map: tex,
+        transparent: true,
+        depthTest: false
+    });
+
     const sprite = new THREE.Sprite(mat);
     sprite.position.set(x, y, z);
-    sprite.scale.set(scaleSize * 2.3, scaleSize * 0.55, 1);
+
+    // Scale proportionally to the exact aspect ratio of the measured text
+    const aspect = width / height;
+    const spriteHeight = scaleSize * 0.48;
+    sprite.scale.set(spriteHeight * aspect, spriteHeight, 1);
+
     return sprite;
 }
 
@@ -271,8 +325,8 @@ function updatePlot() {
         const zTimeWall = 11.0;
         const xFreqWall = -11.0;
 
-        plotGroup.add(createTextLabel("Time t (s) →", 0, -0.7, zTimeWall + 1.2, "#38bdf8", 1.7));
-        plotGroup.add(createTextLabel("← Frequency ω (rad/s)", xFreqWall - 1.5, -0.7, 0, "#ff3366", 1.7));
+        plotGroup.add(createTextLabel("Time Domain t (s) →", 0, -0.9, zTimeWall + 1.3, "#38bdf8", 1.45));
+        plotGroup.add(createTextLabel("← Frequency Domain ω (rad/s)", xFreqWall - 1.5, -0.9, 0, "#ff3366", 1.45));
 
         const numTimeSamples = 250;
 
@@ -375,8 +429,9 @@ function updatePlot() {
     // Mode 2: 3D Period Waterfall (T0 -> Infinity)
     else if (mode === 'waterfall') {
         const periods = [2.0, 3.5, 5.5, 9.0, T0];
-        const sliceXPositions = [-8.5, -4.5, -0.5, 3.5, 7.2];
+        const sliceXPositions = [-8.8, -4.8, -0.8, 3.2, 7.2];
         const sliceColors = [0x38bdf8, 0x22c55e, 0xa855f7, 0xffa600, 0x00e5ff];
+        const sliceHexStr = ["#38bdf8", "#22c55e", "#a855f7", "#ffa600", "#00e5ff"];
 
         for (let s = 0; s < periods.length; s++) {
             const P_curr = periods[s];
@@ -400,8 +455,8 @@ function updatePlot() {
                 plotGroup.add(create3DPillar(xSlice, wk * scaleZ, val * freqScaleY, 0.075, sliceColors[s]));
             }
 
-            const lbl = (s === 4) ? `Your T0=${P_curr.toFixed(1)}s` : `T0=${P_curr.toFixed(1)}s`;
-            plotGroup.add(createTextLabel(lbl, xSlice, -0.8, 11.2, "#38bdf8", 1.35));
+            const lbl = (s === 4) ? `Active T0 = ${P_curr.toFixed(1)} s` : `T0 = ${P_curr.toFixed(1)} s`;
+            plotGroup.add(createTextLabel(lbl, xSlice, -0.85, 11.4, sliceHexStr[s], 1.25));
         }
 
         const infPts = [];
@@ -409,11 +464,11 @@ function updatePlot() {
             const w = -freqLimit + (2 * freqLimit * i) / 240;
             const rawX = calculateCTFT(w, A, tau, shape, wc);
             const val = showSigned ? rawX : Math.abs(rawX);
-            infPts.push(new THREE.Vector3(10.5, val * freqScaleY, w * scaleZ));
+            infPts.push(new THREE.Vector3(10.6, val * freqScaleY, w * scaleZ));
         }
         plotGroup.add(create3DTube(infPts, 0.1, 0xff3366, 1.0));
         plotGroup.add(create3DRibbon(infPts, 0xff3366, 0.35));
-        plotGroup.add(createTextLabel("T0 → ∞ (CTFT)", 10.5, -0.8, 11.2, "#ff3366", 1.45));
+        plotGroup.add(createTextLabel("Non-Periodic Limit: T0 → ∞ (Continuous CTFT)", 10.6, 6.2, 0, "#ff3366", 1.45));
     }
 
     // Mode 3: 3D Complex Phase Helix
@@ -461,15 +516,17 @@ function updatePlot() {
             plotGroup.add(create3DTube(spokePts, 0.04, 0x38bdf8, 0.95));
         }
 
-        plotGroup.add(createTextLabel("3D Complex Helix X(jω)·e^(-jωt0)", 0, 8.2, 0, "#ffa600", 1.8));
+        plotGroup.add(createTextLabel("3D Complex Phase Helix: X(jω)·e^(-jωt0)", 0, 8.6, 0, "#ffa600", 1.55));
+        plotGroup.add(createTextLabel("Real Projection: Re{X(jω)}", -8.5, 7.2, 0, "#22c55e", 1.3));
+        plotGroup.add(createTextLabel("Imaginary Projection: Im{X(jω)}", 0, -0.8, 11.4, "#a855f7", 1.3));
     }
 
     // Mode 4: Energy Spectral Density |X(jw)|^2 vs Power Spectrum |ck|^2
     else if (mode === 'energy') {
-        const xPowerPlane = -4.5;
-        const xEnergyPlane = 4.5;
+        const xPowerPlane = -4.8;
+        const xEnergyPlane = 4.8;
         const esdPeak = Math.pow(peakCTFT, 2);
-        const esdScaleY = 5.5 / Math.max(0.1, esdPeak);
+        const esdScaleY = 5.2 / Math.max(0.1, esdPeak);
 
         // Back Plane: Continuous Energy Spectral Density |X(jw)|^2
         const esdPts = [];
@@ -481,7 +538,7 @@ function updatePlot() {
         }
         plotGroup.add(create3DTube(esdPts, 0.095, 0xff3366, 1.0));
         plotGroup.add(create3DRibbon(esdPts, 0xff3366, 0.30));
-        plotGroup.add(createTextLabel("Non-Periodic ESD |X(jω)|² (Energy Signal)", xEnergyPlane, 6.4, 0, "#ff3366", 1.7));
+        plotGroup.add(createTextLabel("Non-Periodic ESD: |X(jω)|² (Energy Signal)", xEnergyPlane, 6.5, 0, "#ff3366", 1.5));
 
         // Front Plane: Discrete Power Spectrum Pillars (T0^2 * |ck|^2)
         const maxHarm = Math.floor(freqLimit / w0);
@@ -492,7 +549,7 @@ function updatePlot() {
             const isHighlighted = (kInspect >= 0 && Math.abs(k) === kInspect);
             plotGroup.add(create3DPillar(xPowerPlane, wk * scaleZ, pHeight, isHighlighted ? 0.15 : 0.10, isHighlighted ? 0xfde047 : 0x38bdf8));
         }
-        plotGroup.add(createTextLabel("Periodic Power Spectrum |ck|² (Power Signal)", xPowerPlane, 6.4, 0, "#38bdf8", 1.7));
+        plotGroup.add(createTextLabel("Periodic Power Spectrum: |ck|² (Power Signal)", xPowerPlane, 6.5, 0, "#38bdf8", 1.5));
     }
 
     draw2DScope(A, T0, tau, N, t0, wc, shape, showSigned);
